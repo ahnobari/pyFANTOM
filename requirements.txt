@@ -1,0 +1,27 @@
+# Core dependencies
+numpy
+scipy
+numba
+scikit-sparse
+sympy
+
+# Visualization
+matplotlib
+vtk
+k3d
+ipywidgets
+
+# Jupyter support
+jupyter
+
+# Mesh generation
+pygmsh
+
+# Progress bars
+tqdm
+
+# GPU monitoring (optional, for CUDA)
+pynvml
+
+# CUDA support (install separately or use extras_require)
+cupy-cuda12x

@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyFANTOM"
+version = "0.1.0"
+description = "Fast, Efficient, GPU and CPU ready general topology optimization"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "pyFANTOM Contributors"}
+]
+keywords = ["topology optimization", "finite element", "FEA", "CUDA", "GPU"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "numba",
+    "scikit-sparse",
+    "matplotlib",
+    "vtk",
+    "k3d",
+    "ipywidgets",
+    "jupyter",
+    "pygmsh",
+    "tqdm",
+    "pynvml",
+    "sympy"
+]
+
+[project.optional-dependencies]
+cuda = [
+    "cupy-cuda12x",
+]
+
+[tool.setuptools.packages.find]
+include = ["pyFANTOM*"]
+exclude = ["Examples*"]
+
+[tool.setuptools.package-data]
+pyFANTOM = [
+    "core/CUDA/Kernels/*.cu",
+]
+
