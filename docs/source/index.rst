@@ -3,7 +3,7 @@
 Welcome to pyFANTOM's documentation!
 ====================================
 
-**FANTOM**: **Finite-element ANalysis and TOpology Methods**
+**FANTOM**: **Finite-element ANalysis and Topology Optimization Module**
 
 pyFANTOM is a fast, efficient, GPU and CPU ready general topology optimization package.
 

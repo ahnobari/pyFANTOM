@@ -1,6 +1,6 @@
 # pyFANTOM: Fast, Efficient, GPU and CPU ready general topology optimization
 
-**FANTOM**: **Finite-element ANalysis and TOpology Methods**
+**FANTOM**: **Finite-element ANalysis and Topology Optimization Module**
 
 [![Documentation Status](https://readthedocs.org/projects/pyfantom/badge/?version=latest)](https://pyfantom.readthedocs.io/en/latest/?badge=latest)
 
