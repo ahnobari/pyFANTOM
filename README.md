@@ -1,5 +1,12 @@
 # pyFANTOM: Fast, Efficient, GPU and CPU ready general topology optimization
+
+**FANTOM**: **Finite-element ANalysis and TOpology Methods**
+
+[![Documentation Status](https://readthedocs.org/projects/pyfantom/badge/?version=latest)](https://pyfantom.readthedocs.io/en/latest/?badge=latest)
+
 pyFANTOM is a general package for topology optimization built for Finite-Elemente (FE) based topology optimizaiton. All features are built for general purpose use cases with object oriented setup enablig customization and adapting to different problems.
+
+📖 **Documentation**: https://pyfantom.readthedocs.io/
 
 The package by default includes physiocs for linear elasticity, with future releases planned to include other physics. The package also comes with the minimum compliance problem predefined, however, optimizers, meshes, and FE features are all independant of this and can be cutomized sperately as needed.
 
