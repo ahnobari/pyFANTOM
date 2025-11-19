@@ -11,6 +11,6 @@ sphinx:
 python:
   install:
     - requirements: docs/requirements.txt
-    - method: pip
-      path: .
+    # Don't install the package itself - just add it to path for autodoc
+    # The sys.path.insert in conf.py handles making the package importable
 
