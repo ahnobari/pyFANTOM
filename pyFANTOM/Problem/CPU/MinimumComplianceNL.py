@@ -3,7 +3,7 @@ from ...FiniteElement.CPU.FiniteElement import FiniteElement
 from ...geom.CPU._mesh import StructuredMesh
 from ...geom.CPU._filters import StructuredFilter2D, StructuredFilter3D, GeneralFilter
 from ...core.CPU._ops import FEA_locals_node_basis_parallel, FEA_locals_node_basis_parallel_flat, FEA_locals_node_basis_parallel_full
-from typing import Union, List
+from typing import Union, List, Callable
 from scipy.spatial import KDTree
 import numpy as np
 
@@ -33,8 +33,10 @@ class MinimumComplianceNL(Problem):
         Function(p, iteration) for penalty continuation. If None, uses constant penalty
     heavyside : bool, optional
         Apply Heaviside projection for sharper 0-1 designs (default: True)
-    beta : float, optional
-        Heaviside projection sharpness parameter (default: 2)
+    beta : float or callable, optional
+        Heaviside projection sharpness parameter. Can be a float (default: 2) or
+        a callable function of iteration: beta(iteration) -> float. Enables beta
+        continuation for gradual Heaviside sharpening during optimization.
     eta : float, optional
         Heaviside projection threshold (default: 0.5)
     independant : bool, optional
@@ -113,7 +115,7 @@ class MinimumComplianceNL(Problem):
                  volume_fraction: list[float] = [0.25],
                  penalty_schedule: list[float] = None,
                  heavyside: bool = True,
-                 beta: float = 2,
+                 beta: Union[float, Callable[[int], float]] = 2,
                  eta: float = 0.5,
                  independant: bool = True):
 

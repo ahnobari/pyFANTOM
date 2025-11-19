@@ -837,7 +837,7 @@ class MultiGrid(Solver):
     """
     def __init__(self, mesh: Union[StructuredMesh2D,StructuredMesh3D],
                  kernel: StiffnessKernel, maxiter=1000, tol=1e-5, n_smooth=3,
-                 omega=0.5 , n_level = 3, cycle='W', w_level=1, coarse_solver='splu',
+                 omega=0.5 , n_level = 3, cycle='W', w_level=1, coarse_solver='cholmod',
                  matrix_free=False, low_level_tol = 1e-8, low_level_maxiter=5000, min_omega=0.4, omega_boost=1.06):
         super().__init__()
         self.kernel = kernel
@@ -1026,8 +1026,8 @@ class MultiGrid(Solver):
             if self.factor is None:
                 self.factor = cholesky(K, beta=1e-6)
             else:
-                self.factor.cholesky_inplace(K)
-            return lambda rhs: self.factor(rhs, beta=1e-6)
+                self.factor.cholesky_inplace(K, beta=1e-6)
+            return lambda rhs: np.array(self.factor(rhs))
         elif self.coarse_solver == 'spsolve':
             return lambda rhs: spsolve(K, rhs)
         else:

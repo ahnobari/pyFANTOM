@@ -32,8 +32,10 @@ class MinimumCompliance(Problem):
         Function(p, iteration) for penalty continuation. If None, uses constant penalty
     heavyside : bool, optional
         Apply Heaviside projection for sharper 0-1 designs (default: True)
-    beta : float, optional
-        Heaviside projection sharpness parameter (default: 2)
+    beta : float or callable, optional
+        Heaviside projection sharpness parameter. Can be a float (default: 2) or
+        a callable function of iteration: beta(iteration) -> float. Enables beta
+        continuation for gradual Heaviside sharpening during optimization.
     eta : float, optional
         Heaviside projection threshold (default: 0.5)
         
@@ -63,7 +65,7 @@ class MinimumCompliance(Problem):
                  volume_fraction: list[float] = [0.25],
                  penalty_schedule:  Callable[[float, int], float] = None,
                  heavyside: bool = True,
-                 beta: float = 2,
+                 beta: Union[float, Callable[[int], float]] = 2,
                  eta: float = 0.5):
 
         super().__init__()
@@ -306,9 +308,12 @@ class MinimumCompliance(Problem):
         if self.penalty_schedule is not None:
             pen = self.penalty_schedule(self.penalty, self.iteration)
 
+        # Get current beta value (either float or from schedule)
+        beta_val = self.beta(self.iteration) if callable(self.beta) else self.beta
+
         if self.is_single_material:
             if self.heavyside:
-                _rho = (np.tanh(self.beta * self.eta) + np.tanh(self.beta * (rho-self.eta))) / (np.tanh(self.beta*self.eta) + np.tanh(self.beta * (1-self.eta)))
+                _rho = (np.tanh(beta_val * self.eta) + np.tanh(beta_val * (rho-self.eta))) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
             else:
                 _rho = rho
             _rho = _rho**pen
@@ -320,7 +325,7 @@ class MinimumCompliance(Problem):
             
         else:
             if self.heavyside:
-                _rho = (np.tanh(self.beta * self.eta) + np.tanh(self.beta * (rho-self.eta))) / (np.tanh(self.beta*self.eta) + np.tanh(self.beta * (1-self.eta)))
+                _rho = (np.tanh(beta_val * self.eta) + np.tanh(beta_val * (rho-self.eta))) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
             else:
                 _rho = rho
             rho_ = _rho**pen
@@ -348,11 +353,14 @@ class MinimumCompliance(Problem):
 
         if self.penalty_schedule is not None:
             pen = self.penalty_schedule(self.penalty, self.iteration)
+
+        # Get current beta value (either float or from schedule)
+        beta_val = self.beta(self.iteration) if callable(self.beta) else self.beta
             
         if self.is_single_material:
             if self.heavyside:
-                rho_heavy = (np.tanh(self.beta * self.eta) + np.tanh(self.beta * (rho-self.eta))) / (np.tanh(self.beta*self.eta) + np.tanh(self.beta * (1-self.eta)))
-                df = pen * rho_heavy ** (pen - 1) * self.beta * (1 - np.tanh(self.beta * (rho-self.eta))**2) / (np.tanh(self.beta*self.eta) + np.tanh(self.beta * (1-self.eta)))
+                rho_heavy = (np.tanh(beta_val * self.eta) + np.tanh(beta_val * (rho-self.eta))) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
+                df = pen * rho_heavy ** (pen - 1) * beta_val * (1 - np.tanh(beta_val * (rho-self.eta))**2) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
             else:
                 df = pen * rho ** (pen - 1)
 
@@ -360,7 +368,7 @@ class MinimumCompliance(Problem):
         
         else:
             if self.heavyside:
-                rho_heavy = (np.tanh(self.beta * self.eta) + np.tanh(self.beta * (rho-self.eta))) / (np.tanh(self.beta*self.eta) + np.tanh(self.beta * (1-self.eta)))
+                rho_heavy = (np.tanh(beta_val * self.eta) + np.tanh(beta_val * (rho-self.eta))) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
                 
                 rho_ = pen * rho_heavy ** (pen - 1)
                 rho__ = 1 - rho_heavy**pen
@@ -378,7 +386,7 @@ class MinimumCompliance(Problem):
                 d *= mul
                 d = d @ self.E_mul[:, np.newaxis]
                 
-                df = d.squeeze().T * self.beta * (1 - np.tanh(self.beta * (rho-self.eta))**2) / (np.tanh(self.beta*self.eta) + np.tanh(self.beta * (1-self.eta)))
+                df = d.squeeze().T * beta_val * (1 - np.tanh(beta_val * (rho-self.eta))**2) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
                 
                 return df
             else:
