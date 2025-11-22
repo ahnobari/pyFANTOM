@@ -220,3 +220,5 @@ class CuGeneralMesh(GeneralMesh):
         
         self.elements_flat = cp.array(self.elements_flat, dtype=cp.int32)
         self.centroids = cp.array(self.centeroids, dtype=dtype)
+        self.nodes = cp.array(self.nodes, dtype=dtype)
+        self.elements = cp.array(self.elements, dtype=cp.int32)

@@ -24,4 +24,5 @@ tqdm
 pynvml
 
 # CUDA support (install separately or use extras_require)
+cupy
 cupy-cuda12x

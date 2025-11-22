@@ -265,7 +265,7 @@ class MinimumCompliance(Problem):
         matplotlib.axes.Axes or k3d.Plot
             Plot object
         """
-        self.FE.visualize_problem(**kwargs)
+        return self.FE.visualize_problem(**kwargs)
     
     def visualize_solution(self, **kwargs):
         """
@@ -289,7 +289,7 @@ class MinimumCompliance(Problem):
         rho = self.get_desvars()
         if self.n_material > 1:
             rho = rho.reshape(self.n_material, -1).T
-        self.FE.visualize_density(rho, **kwargs)
+        return self.FE.visualize_density(rho, **kwargs)
     
     def init_desvars(self):
         """
