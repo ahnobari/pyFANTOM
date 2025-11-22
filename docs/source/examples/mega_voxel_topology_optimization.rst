@@ -171,7 +171,7 @@ Now we can visualize the resulting topology:
 
 .. raw:: html
 
-   <iframe src="/_static/MegaVoxelExample/8MBridge.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/MegaVoxelExample/8MBridge.html" width="100%" height="600px" style="border: none;"></iframe>
 
 We can also verify the volume fraction:
 

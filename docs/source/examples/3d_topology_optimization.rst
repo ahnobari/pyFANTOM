@@ -75,7 +75,7 @@ The next step in using pyFANTOM is setting up a stiffness kernel and finite-elem
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/1.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/1.html" width="100%" height="600px" style="border: none;"></iframe>
 
 As seen above we do not have loads or boundary conditions. So now we will set this up for the bridge problem:
 
@@ -108,7 +108,7 @@ As seen above we do not have loads or boundary conditions. So now we will set th
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/2.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/2.html" width="100%" height="600px" style="border: none;"></iframe>
 
 ====================================
 Setting Up TO Problem And Optimizer
@@ -181,7 +181,7 @@ Now we can visualize the resulting topology:
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/3.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/3.html" width="100%" height="600px" style="border: none;"></iframe>
 
 Running on GPU
 --------------
@@ -290,7 +290,7 @@ A few notes on CUDA back-ends:
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/4.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/4.html" width="100%" height="600px" style="border: none;"></iframe>
 
 .. code-block:: python
 
@@ -323,7 +323,7 @@ The GPU optimization converged in 59 iterations:
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/5.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/5.html" width="100%" height="600px" style="border: none;"></iframe>
 
 Unstructured Meshes
 -------------------
@@ -404,7 +404,7 @@ Below we will make a toy problem mesh using pygmesh.
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/6.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/6.html" width="100%" height="600px" style="border: none;"></iframe>
 
 Now we will setup boundary conditions for this toy problem:
 
@@ -453,7 +453,7 @@ Now we will setup boundary conditions for this toy problem:
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/7.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/7.html" width="100%" height="600px" style="border: none;"></iframe>
 
 Now we can just setup the problem and optimizer like before:
 
@@ -515,7 +515,7 @@ The unstructured mesh optimization converged in 148 iterations:
 
 .. raw:: html
 
-   <iframe src="/_static/3DExample/8.html" width="100%" height="600px" style="border: none;"></iframe>
+   <iframe src="../_static/3DExample/8.html" width="100%" height="600px" style="border: none;"></iframe>
 
 As you can see this geometry is a bit of a mess. For best results you should work with as uniform of a hex mesh as possible instead of this simple tetra mesh.
 

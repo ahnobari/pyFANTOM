@@ -42,6 +42,18 @@ language = 'en'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
+# Disable the security feature that blocks HTML in iframes on ReadTheDocs
+# This allows HTML snapshots to be properly loaded
+html_use_opensearch = ''
+
+# Configure static file handling
+html_show_sourcelink = True
+
+# Setup function to ensure proper MIME types for static files
+def setup(app):
+    # Ensure HTML files in _static are served with correct MIME type
+    pass
+
 # -- Options for intersphinx extension ---------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration
 

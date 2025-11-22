@@ -7,10 +7,17 @@ build:
 
 sphinx:
   configuration: docs/source/conf.py
+  fail_on_warning: false
 
 python:
   install:
     - requirements: docs/requirements.txt
     # Don't install the package itself - just add it to path for autodoc
     # The sys.path.insert in conf.py handles making the package importable
+
+# Ensure HTML files are not blocked
+formats:
+  - pdf
+  - htmlzip
+  - epub
 
