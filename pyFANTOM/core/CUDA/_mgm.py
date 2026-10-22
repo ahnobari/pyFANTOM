@@ -96,6 +96,13 @@ def get_restricted_l0_cuda(mesh: Union[CuStructuredMesh2D, CuStructuredMesh3D], 
                                         dof, node_ids, el_ids, sorter, elements_flat, weights, elements_size, con_map, elem_flat_size, n_nodes))    
     
     K = cp.sparse.csr_matrix((Cx, Cj, Cp), shape=(Cp.shape[0]-1, Cp.shape[0]-1))
+    # K is NOT truly canonical: every row has a fixed 81 (3D) / 18 (2D) slots,
+    # slots of neighbours outside the grid hold zeros at column 0 (duplicates),
+    # and columns are in stencil order, not sorted. Products, the diagonal below
+    # and the restriction read it correctly. The flag is kept on purpose: it stops
+    # cupy from compacting K in place on its first product, which would change the
+    # summation order of every product. Anything that needs canonical storage
+    # (e.g. CHOLMOD, which keeps only the last duplicate) must canonicalize a copy.
     K.has_canonical_format = True
     diag = cp.zeros(K.shape[0], dtype=K.dtype)
     n_row = K.shape[0]

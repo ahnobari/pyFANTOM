@@ -1023,6 +1023,11 @@ class MultiGrid(Solver):
             return lambda rhs: SOLVER.solve(rhs)
         elif self.coarse_solver == 'cholmod':
             K = K.tocsc()
+            # CHOLMOD does not sum duplicate entries (the last one stored wins). The
+            # level-0 restricted operator (the coarse matrix when n_level=1) carries
+            # zero-valued duplicates, so canonicalize before factorizing.
+            K.sum_duplicates()
+            K.sort_indices()
             if self.factor is None:
                 self.factor = cholesky(K, beta=1e-6)
             else:
@@ -1130,15 +1135,26 @@ class MultiGrid(Solver):
             norm_r = (r*r).sum()**0.5
             R = norm_r / norm_b
             if R < self.tol:
-                break
+                # the recurrence residual drifts from the true residual in finite
+                # precision; confirm against the true residual, otherwise replace the
+                # residual and restart the search direction
+                r = rhs - self.kernel.dot(x)
+                if (r*r).sum()**0.5 / norm_b < self.tol:
+                    break
+                z = v_cycle(np.zeros_like(r), r, 0)
+                p = z.copy()
+                rho_old = (r*z).sum()
+                continue
             self.omega = self.min_omega + self.d_omega/2*np.exp((-np.clip(R,self.tol,1e-1)+self.tol)*500)
             z = v_cycle(np.copy(r), r,0)
             rho_new = (r*z).sum()
             beta = rho_new / rho_old
             p = z + beta * p
             rho_old = rho_new
-        
-        residual = norm_r / norm_b
+
+        # report the true residual, not the recurrence estimate
+        r = rhs - self.kernel.dot(x)
+        residual = (r*r).sum()**0.5 / norm_b
         
         self.last_x0 = x
         

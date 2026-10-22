@@ -98,11 +98,17 @@ class CuStructuredFilter3D(FilterKernel):
         get_filter_weights_3D_cuda(self.nelx, self.nely, self.nelz, self.offsets, self.weights, self.normalizer)
 
     def _matvec(self, rho):
+        # the raw CUDA kernels index rho as a dense array, so strided views
+        # (e.g. a material column of an (nel, n_material) array) must be copied
+        rho = cp.ascontiguousarray(rho)
         v_out = cp.zeros_like(rho)
         apply_filter_3D_cuda(rho, v_out, self.nelx, self.nely, self.nelz, self.offsets, self.weights)
         return v_out
 
     def _rmatvec(self, rho):
+        # the raw CUDA kernels index rho as a dense array, so strided views
+        # (e.g. a material column of an (nel, n_material) array) must be copied
+        rho = cp.ascontiguousarray(rho)
         v_out = cp.zeros_like(rho)
         apply_filter_3D_transpose_cuda(rho, v_out, self.nelx, self.nely, self.nelz, self.offsets, self.weights, self.normalizer)
         return v_out
@@ -191,11 +197,17 @@ class CuStructuredFilter2D(FilterKernel):
         get_filter_weights_2D_cuda(self.nelx, self.nely, self.offsets, self.weights, self.normalizer)
     
     def _matvec(self, rho):
+        # the raw CUDA kernels index rho as a dense array, so strided views
+        # (e.g. a material column of an (nel, n_material) array) must be copied
+        rho = cp.ascontiguousarray(rho)
         v_out = cp.zeros_like(rho)
         apply_filter_2D_cuda(rho, v_out, self.nelx, self.nely, self.offsets, self.weights)
         return v_out
     
     def _rmatvec(self, rho):
+        # the raw CUDA kernels index rho as a dense array, so strided views
+        # (e.g. a material column of an (nel, n_material) array) must be copied
+        rho = cp.ascontiguousarray(rho)
         v_out = cp.zeros_like(rho)
         apply_filter_2D_transpose_cuda(rho, v_out, self.nelx, self.nely, self.offsets, self.weights, self.normalizer)
         return v_out

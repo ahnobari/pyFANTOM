@@ -38,6 +38,19 @@ class MinimumCompliance(Problem):
         continuation for gradual Heaviside sharpening during optimization.
     eta : float, optional
         Heaviside projection threshold (default: 0.5)
+    simp : str, optional
+        Stiffness interpolation (default: "interpolated"):
+        - "interpolated": E = void + rho^p * (E_mul - void), i.e. modified SIMP with
+          E_min = void; for multiple materials E = void + sum_i w_i (E_mul_i - void)
+          with w_i the multi-material SIMP weights
+        - "clipped": E = clip(rho^p, void, 1) * E_mul (void is a relative floor)
+    volume_constraint : str, optional
+        Density the volume constraint is applied to (default: "physical"):
+        - "physical": filtered density, after Heaviside projection if heavyside is True
+        - "filtered": filtered density, before any projection
+        - "design": raw design variables
+        With Heaviside projection, "physical" is nonlinear in the design variables
+        and its gradient is updated at every design update.
         
     Attributes
     ----------
@@ -124,7 +137,9 @@ class MinimumCompliance(Problem):
                  penalty_schedule:  Callable[[float, int], float] = None,
                  heavyside: bool = True,
                  beta: Union[float, Callable[[int], float]] = 2,
-                 eta: float = 0.5):
+                 eta: float = 0.5,
+                 simp: str = "interpolated",
+                 volume_constraint: str = "physical"):
 
         super().__init__()
         
@@ -174,6 +189,20 @@ class MinimumCompliance(Problem):
             self._nabla_g = np.zeros((self.n_material, self.num_vars), dtype=self.dtype)
             for i in range(self.n_material):
                 self._nabla_g[i, i*self.nel:(i+1)*self.nel] = self.FE.mesh.As/self.FE.mesh.volume
+
+        if simp not in ("interpolated", "clipped"):
+            raise ValueError(f"simp must be 'interpolated' or 'clipped', got {simp!r}.")
+        if volume_constraint not in ("physical", "filtered", "design"):
+            raise ValueError(f"volume_constraint must be 'physical', 'filtered' or 'design', got {volume_constraint!r}.")
+        self.simp = simp
+        self.volume_constraint = volume_constraint
+
+        # linear volume constraints are evaluated as _nabla_g @ x; the projected one is not linear
+        self._linear_volume = volume_constraint == "design" or not (volume_constraint == "physical" and heavyside)
+        if volume_constraint != "design":
+            # per-element volume weights w; the filtered volume w . (H x) has gradient H^T w
+            self._vol_w = np.copy(self._nabla_g if self.is_single_material else self._nabla_g[0, :self.nel])
+            self._nabla_g = self._volume(np.zeros(self.num_vars, dtype=self.dtype), project=False, grad=True)[1]
 
         self.is_3D = self.FE.mesh.nodes.shape[1] == 3
             
@@ -369,6 +398,8 @@ class MinimumCompliance(Problem):
                 _rho = (np.tanh(beta_val * self.eta) + np.tanh(beta_val * (rho-self.eta))) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
             else:
                 _rho = rho
+            if self.simp == "interpolated":
+                return self.void + _rho**pen * (self.E_mul - self.void)
             _rho = _rho**pen
             _rho = np.clip(_rho, self.void, 1.0)
             _rho = _rho*self.E_mul
@@ -396,6 +427,8 @@ class MinimumCompliance(Problem):
                 .T
             )
 
+            if self.simp == "interpolated":
+                return self.void + (rho_ * (self.E_mul - self.void)[np.newaxis, :]).sum(axis=1)
             E = (rho_ * self.E_mul[np.newaxis, :]).sum(axis=1)
             E = np.clip(E, self.void, None)
             
@@ -417,6 +450,8 @@ class MinimumCompliance(Problem):
             else:
                 df = pen * rho ** (pen - 1)
 
+            if self.simp == "interpolated":
+                return df * (self.E_mul - self.void)
             return df*self.E_mul
         
         else:
@@ -437,7 +472,7 @@ class MinimumCompliance(Problem):
                 mul[np.arange(self.n_material), :, np.arange(self.n_material)] *= -1
 
                 d *= mul
-                d = d @ self.E_mul[:, np.newaxis]
+                d = d @ (self.E_mul - self.void if self.simp == "interpolated" else self.E_mul)[:, np.newaxis]
                 
                 df = d.squeeze().T * beta_val * (1 - np.tanh(beta_val * (rho-self.eta))**2) / (np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta)))
                 
@@ -457,12 +492,40 @@ class MinimumCompliance(Problem):
                 mul[np.arange(self.n_material), :, np.arange(self.n_material)] *= -1
 
                 d *= mul
-                d = d @ self.E_mul[:, np.newaxis]
+                d = d @ (self.E_mul - self.void if self.simp == "interpolated" else self.E_mul)[:, np.newaxis]
                 
                 df = d.squeeze().T
                 
                 return df
     
+    def _volume(self, x, project=True, grad=False):
+        # volume fraction of each material's filtered density, Heaviside-projected
+        # first if project and heavyside; optionally with its gradient w.r.t. x
+        rho = np.copy(x).reshape(self.n_material, -1).T
+        for i in range(self.n_material):
+            rho[:, i] = self.filter.dot(rho[:, i])
+
+        if project and self.heavyside:
+            beta_val = self.beta(self.iteration) if callable(self.beta) else self.beta
+            denom = np.tanh(beta_val*self.eta) + np.tanh(beta_val * (1-self.eta))
+            t = np.tanh(beta_val * (rho-self.eta))
+            rho_p = (np.tanh(beta_val * self.eta) + t) / denom
+            drho = beta_val * (1 - t**2) / denom
+        else:
+            rho_p = rho
+            drho = np.ones_like(rho)
+
+        vf = self._vol_w @ rho_p
+        if not grad:
+            return vf
+
+        dg = np.zeros((self.n_material, self.num_vars), dtype=self.dtype)
+        for i in range(self.n_material):
+            dg[i, i*self.nel:(i+1)*self.nel] = self.filter._rmatvec(self._vol_w * drho[:, i])
+        if self.is_single_material:
+            dg = dg.reshape(-1)
+        return vf, dg
+
     def _compute(self):
         
         if self.is_single_material:
@@ -496,6 +559,9 @@ class MinimumCompliance(Problem):
         else:
             self._nabla_f = dr.T.reshape(-1)
         self._residual = residual
+
+        if not self._linear_volume:
+            self._nabla_g = self._volume(self.desvars, grad=True)[1]
 
     def f(self, rho: np.ndarray = None):
         """
@@ -566,13 +632,14 @@ class MinimumCompliance(Problem):
         - For multi-material: returns array with one constraint per material
         """
         if rho is None:
-            vf = (self._nabla_g @ self.desvars.reshape(-1, 1))
-            
-            return vf.reshape(-1) - self.volume_fraction
+            rho = self.desvars
+
+        if self._linear_volume:
+            vf = (self._nabla_g @ rho.reshape(-1, 1)).reshape(-1)
         else:
-            vf = (self._nabla_g @ rho.reshape(-1, 1))
-            
-            return vf.reshape(-1) - self.volume_fraction
+            vf = self._volume(rho)
+
+        return vf - self.volume_fraction
         
     def nabla_g(self):
         """
@@ -588,7 +655,9 @@ class MinimumCompliance(Problem):
         Notes
         -----
         - Each row is d(volume_fraction[i])/drho
-        - For uniform elements, gradient is constant: 1/volume_total per element
+        - For volume_constraint="design" with uniform elements, gradient is constant:
+          1/volume_total per element; "filtered" adds the filter adjoint, and
+          "physical" with Heaviside also the projection derivative (updated per design)
         - Used by optimizers to enforce volume constraints
         """
         return self._nabla_g

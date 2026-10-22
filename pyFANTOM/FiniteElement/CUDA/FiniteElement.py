@@ -244,8 +244,10 @@ class FiniteElement(FE):
                 forces = np.tile(forces, (node_ids.shape[0], 1))
                 
             for i in range(self.mesh.dof):
-                self.rhs[node_ids * self.mesh.dof + i] += forces[:, i]
-                
+                # add.at accumulates repeated node_ids; fancy-indexed += keeps only
+                # one contribution per index (and races on the GPU)
+                np.add.at(self.rhs, node_ids * self.mesh.dof + i, forces[:, i])
+
             # set dirichlet rhs
             dirichlet_dofs = np.logical_not(np.isnan(self.d_rhs))
             self.rhs[dirichlet_dofs] = self.d_rhs[dirichlet_dofs]
